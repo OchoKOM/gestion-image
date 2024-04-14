@@ -116,43 +116,24 @@ function resizeAndCropImage(imageSource, targetSize) {
 //         console.error('Une erreur s\'est produite :', error);
 //     });
 
-
-function inputsCheck(stp = null) {
-    if(!stp){
-        return;
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
     }
-    const step = stp;
-    const all_inputs = step.querySelectorAll('input');
-    return new Promise(async (resolve) => {
-        let result = false;
-        const requiredInputs = [];
-        all_inputs.forEach(async (input)=>{
-            const isRequired = Boolean(input.required);
-            const  emptyRequired = await checkEmptyFields(input);
-            if (isRequired && emptyRequired) {
-                requiredInputs.push(input);
-                InvalidInput(requiredInputs[0]);
-            }
-        });
-         
-        if (requiredInputs.length) {
-            result = false;
-            return;
-        }
-        if (step.querySelector("input[name='username']")) {
-            const usernameInput = step.querySelector("input[name='username']");
-            const emptyUsername = await checkEmptyFields(usernameInput);
-            const usrn = emptyUsername && (await checkUserName(usernameInput));
-            result = (!emptyUsername && usrn);
-        }
-        
-        const passwordInputs = step.querySelectorAll('input[type="password"');
+    return color;
+}
 
-        if (passwordInputs.length === 2) {
-            const  emptyPass = await checkEmptyFields(passwordInputs[0]);
-            const pass = emptyPass && checkPasswordMatch({ input1: passwordInputs[0], input2: passwordInputs[1] });
-            result = pass;
-        }
-        resolve(result);
-    })
+function getContrastColor(hexColor) {
+    // Convertir le code hexadécimal en RGB
+    let r = parseInt(hexColor.substr(1, 2), 16);
+    let g = parseInt(hexColor.substr(3, 2), 16);
+    let b = parseInt(hexColor.substr(5, 2), 16);
+
+    // Calculer la luminance
+    let luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Choisir la couleur du texte en fonction de la luminance
+    return luminance > 0.5 ? '#000' : '#fff';
 }
