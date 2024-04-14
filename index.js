@@ -47,52 +47,74 @@ function resizeAndCropImage(imageSource, targetSize) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
-            const maxPixels = targetSize * targetSize;
-
+            // Calculer la taille initiale de l'image
             let width = img.width;
             let height = img.height;
+
+            // Calculer le nombre de pixels de l'image
             const currentPixels = width * height;
-            const ratio = Math.sqrt(maxPixels / currentPixels);
+
+            // Calculer le nombre de pixels cible
+            const targetPixels = targetSize * targetSize;
+
+            // Calculer le ratio pour ajuster la taille de l'image
+            const ratio = Math.sqrt(targetPixels / currentPixels);
+
+            // Redimensionner l'image
             width *= ratio;
             height *= ratio;
 
             // Créer un canvas pour redimensionner et rogner l'image
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            canvas.width = targetSize;
-            canvas.height = targetSize;
 
-            // Redimensionner l'image
+            // Ajuster la taille du canvas en fonction de l'image
+            canvas.width = width;
+            canvas.height = height;
+
+            // Redimensionner l'image sur le canvas
             context.drawImage(img, 0, 0, width, height);
 
-            // Rogner l'image au centre
-            const offsetX = (width - targetSize) / 2;
-            const offsetY = (height - targetSize) / 2;
-            context.drawImage(canvas, offsetX, offsetY, targetSize, targetSize, 0, 0, targetSize, targetSize);
+            // Calculer les dimensions de rognage pour centrer l'image
+            let offsetX = 0;
+            let offsetY = 0;
+            if (width > height) {
+                offsetX = (width - height) / 2;
+            } else {
+                offsetY = (height - width) / 2;
+            }
+
+            // Créer un nouveau canvas pour rogner l'image à la taille cible
+            const finalCanvas = document.createElement('canvas');
+            const finalContext = finalCanvas.getContext('2d');
+            finalCanvas.width = targetSize;
+            finalCanvas.height = targetSize;
+
+            // Rogner l'image au centre sur le nouveau canvas
+            finalContext.drawImage(canvas, offsetX, offsetY, Math.min(width, height), Math.min(width, height), 0, 0, targetSize, targetSize);
 
             // Récupérer l'image rognée sous forme de data URL
-            const dataUrl = canvas.toDataURL();
-            canvas.toBlob(blob_object => {
-                const blob = new Blob([blob_object], { type: 'image/webp' });
+            const dataUrl = finalCanvas.toDataURL();
+
+            // Convertir le canvas en Blob
+            finalCanvas.toBlob(blob => {
                 const blobUrl = URL.createObjectURL(blob);
-
-                const data = { blob, dataUrl, blobUrl }
+                const data = { blob, dataUrl, blobUrl };
                 resolve(data);
-
-            })
+            }, 'image/jpeg');
         };
 
         img.onerror = () => {
             reject(new Error('Failed to load image.'));
         };
 
-        // Vérifier si l'entrée est un URL ou un objet Blob
+        // Charger l'image à partir de l'URL ou des données Blob
         if (typeof imageSource === 'string') {
-            img.src = imageSource; // Si c'est une URL, charger l'image à partir de l'URL
+            img.src = imageSource;
         } else if (imageSource instanceof Blob) {
             const reader = new FileReader();
             reader.onload = () => {
-                img.src = reader.result; // Si c'est un objet Blob, charger l'image à partir des données Blob
+                img.src = reader.result;
             };
             reader.onerror = () => {
                 reject(new Error('Failed to read Blob data.'));
@@ -103,6 +125,7 @@ function resizeAndCropImage(imageSource, targetSize) {
         }
     });
 }
+
 
 // // Exemple d'utilisation :
 // const imageUrlOrBlob = "./assets/img1.webp"; // URL ou Blob de l'image à redimensionner et recadrager
